@@ -1,0 +1,1 @@
+from backend.handlers.lambda_handler import lambda_handler
