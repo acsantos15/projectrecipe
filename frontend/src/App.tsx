@@ -3,6 +3,7 @@ import './App.css';
 import { CssBaseline, Button, Box, Stack, Typography } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import RecipeGen from './components/RecipeGen';
+import GroceryGen from './components/GroceryGen';
 import logo from './assets/mainicon.jpg';
 import recipeIcon from './assets/recipe.gif';
 import groceryIcon from './assets/grocery.gif';
@@ -106,13 +107,6 @@ const Home: React.FC = () => (
         </Typography>
       </Box>
     </Stack>
-  </Box>
-);
-
-// Placeholder for grocery generator
-const GroceryGen: React.FC = () => (
-  <Box p={4}>
-    <h2>Grocery Generator (Coming Soon)</h2>
   </Box>
 );
 

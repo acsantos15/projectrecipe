@@ -30,7 +30,7 @@ class RecipeService:
         """Ensures the response matches our standard format"""
         if "error" in parsed_response:
             return parsed_response
-
+            
         return {
             "name": parsed_response.get("name", ""),
             "servings": parsed_response.get("servings", 0),
@@ -88,6 +88,7 @@ class RecipeService:
             "- **Steps must be clear, imperative, and sequential**\n"
             "- **Equipment must be practical** (e.g., 'pot', 'knife', 'mixing bowl').\n"
             "- **Never include extra text or markdown**—ONLY the JSON object.\n"
+            "- **Never generate logically or culturally inconsistent recipes** (e.g., vegan dishes must not contain animal products like pork, dairy, or eggs).\n"
             "\n"
             "Example Behavior:\n"
             "- Input: chicken, soy sauce, black pepper + Filipino → Output: Chicken Adobo (with vinegar/garlic added)\n"
@@ -119,11 +120,11 @@ class RecipeService:
         match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
         if match:
             return match.group(1)
-
+        
         # Try to find standalone JSON
         match = re.search(r"^\s*({.*})\s*$", text, re.DOTALL)
         if match:
             return match.group(1)
-
+            
         # Fallback: return the text as-is (will fail JSON parsing but preserves the error)
         return text.strip()

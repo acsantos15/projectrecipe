@@ -12,8 +12,7 @@ def call_with_backoff(client, method_name, params, max_retries=5, base_delay=0.5
                     wait = delay + random.uniform(0, 1)
                     total_wait += wait
                     if total_wait > timeout_limit:
-                        raise TimeoutError(
-                            "Exceeded total retry timeout limit.")
+                        raise TimeoutError("Exceeded total retry timeout limit.")
                     print(f"[Retry] Throttled. Waiting {wait:.2f}s...")
                     time.sleep(wait)
                     delay *= 2
