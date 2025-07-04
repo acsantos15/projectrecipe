@@ -1,8 +1,10 @@
 import json
 import boto3
+import re
 from ..utils.config import MODEL_ID, REGION
 from ..utils.aws_retry_helper import call_with_backoff
 from ..models.recipe_model import RecipeRequest
+
 
 class RecipeService:
     def __init__(self):
@@ -12,10 +14,14 @@ class RecipeService:
         prompt = self._build_prompt(request)
         response_text = self._call_bedrock(prompt)
 
+        cleaned_text = self._extract_json_block(response_text)
+
         try:
-            return json.loads(response_text)
+            parsed = json.loads(cleaned_text)
+            return parsed
         except json.JSONDecodeError as e:
-            raise ValueError(f"Claude response is not valid JSON: {response_text}") from e
+            raise ValueError(
+                f"Model response is not valid JSON:\n{response_text}") from e
 
     def _build_prompt(self, request: RecipeRequest) -> str:
         prompt_parts = [
@@ -29,21 +35,24 @@ class RecipeService:
             prompt_parts.append(f" that serves {request.servings} people")
 
         if request.cooking_time:
-            prompt_parts.append(f" with a cooking time of about {request.cooking_time} minutes")
+            prompt_parts.append(
+                f" with a cooking time of about {request.cooking_time} minutes")
 
         if request.flavor_profile:
-            prompt_parts.append(f" with a {request.flavor_profile.lower()} flavor profile")
+            prompt_parts.append(
+                f" with a {request.flavor_profile.lower()} flavor profile")
 
         if request.dietary_prefs:
             prompt_parts.append(f" that is {', '.join(request.dietary_prefs)}")
 
         if request.equipment:
-            prompt_parts.append(f" using the following equipment: {', '.join(request.equipment)}")
+            prompt_parts.append(
+                f" using the following equipment: {', '.join(request.equipment)}")
 
         base_prompt = " ".join(prompt_parts) + "."
 
         return base_prompt + (
-            "\n\nPlease respond in the following JSON format:\n"
+            "\nRespond only with a valid JSON object. Do NOT include triple backticks, markdown, or labels like tabular-data-json. Format:\n"
             "{\n"
             '  "name": "<Recipe name>",\n'
             '  "servings": "<number of servings>",\n'
@@ -58,17 +67,29 @@ class RecipeService:
         params = {
             "modelId": MODEL_ID,
             "body": json.dumps({
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 1000,
-                "temperature": 0.7,
-                "anthropic_version": "bedrock-2023-05-31"
+                "inputText": prompt,
+                "textGenerationConfig": {
+                    "temperature": 0.3,
+                    "maxTokenCount": 1000,
+                    "topP": 0.9,
+                }
             })
         }
 
         response = call_with_backoff(self.client, "invoke_model", params)
-        text = json.loads(response["body"].read())["content"][0]["text"]
+        response_body = response["body"].read()
+        response_json = json.loads(response_body)
 
-        if "```" in text:
-            text = text.split("```")[1].strip()
+        return response_json["results"][0]["outputText"]
 
-        return text
+    def _extract_json_block(self, text: str) -> str:
+        """
+        Removes Markdown-style triple-backtick fences, if present.
+        Works with ```json ... ```, ```tabular-data-json ... ```, or just ``` ... ```
+        """
+        match = re.search(r"```(?:\w+)?\s*({.*?})\s*```", text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        # Fallback: assume it's already clean JSON
+        return text.strip()
