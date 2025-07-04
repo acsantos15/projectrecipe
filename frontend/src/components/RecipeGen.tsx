@@ -9,13 +9,13 @@ import RecipeForm from './RecipeForm';
 import RecipeDisplay from './RecipeDisplay';
 
 const RecipeGenerator: React.FC = () => {
-  const [recipeHtml, setRecipeHtml] = useState('');
+  const [recipeData, setRecipeData] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const generateRecipe = async (formData: RecipeFormData) => {
     setError('');
-    setRecipeHtml('');
+    setRecipeData(null);
     setLoading(true);
 
     try {
@@ -50,7 +50,7 @@ const RecipeGenerator: React.FC = () => {
       }
 
       // Format and display the recipe
-      setRecipeHtml(formatRecipe(responseData));
+      setRecipeData(responseData);
 
     } catch (err: any) {
       console.error('Recipe generation error:', err);
@@ -79,37 +79,6 @@ const RecipeGenerator: React.FC = () => {
     }
   };
 
-  const formatRecipe = (responseData: any) => {
-    const recipeObj = responseData.response;
-    const metadata = responseData.metadata || {};
-    
-    return `
-      <h3>${recipeObj.name}</h3>
-      ${recipeObj.servings ? `<p><strong>Servings:</strong> ${recipeObj.servings}</p>` : ''}
-      ${recipeObj.cooking_time ? 
-        `<p><strong>Cooking Time:</strong> ${recipeObj.cooking_time} minutes</p>` : ''}
-      
-      ${metadata.ingredients ? `
-        <p><strong>Requested Ingredients:</strong> ${metadata.ingredients.join(', ')}</p>
-      ` : ''}
-      
-      ${metadata.cuisine ? `
-        <p><strong>Cuisine:</strong> ${metadata.cuisine}</p>
-      ` : ''}
-      
-      <strong>Ingredients:</strong>
-      <ul>${(recipeObj.recipe || []).map((item: string) => `<li>${item}</li>`).join('')}</ul>
-      
-      <strong>Steps:</strong>
-      <ol>${(recipeObj.steps || []).map((step: string) => `<li>${step}</li>`).join('')}</ol>
-      
-      ${recipeObj.equipment ? `
-        <strong>Equipment:</strong>
-        <ul>${recipeObj.equipment.map((item: string) => `<li>${item}</li>`).join('')}</ul>
-      ` : ''}
-    `;
-  };
-
   return (
     <Box
       sx={{
@@ -120,7 +89,7 @@ const RecipeGenerator: React.FC = () => {
     >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
         <RecipeForm onSubmit={generateRecipe} loading={loading} />
-        <RecipeDisplay recipeHtml={recipeHtml} error={error} loading={loading} />
+        <RecipeDisplay recipeData={recipeData} error={error} loading={loading} />
       </Stack>
       <Navigation />
     </Box>

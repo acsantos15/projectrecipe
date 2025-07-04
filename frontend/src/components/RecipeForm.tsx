@@ -14,8 +14,12 @@ import {
   Chip,
   Slider,
   Box,
-  CircularProgress
+  CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { RecipeFormData } from './RecipeGen';
 
 interface RecipeFormProps {
@@ -37,7 +41,19 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
 
   const cuisines = ['Italian', 'Japanese', 'Mexican', 'Korean', 'Indian', 'French', 'Thai', 'Filipino'];
   const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'];
-  const diets = ['Vegetarian', 'Vegan', 'Keto', 'Halal', 'Gluten-Free', 'Dairy-Free'];
+  const diets = [
+    'Vegetarian',
+    'Vegan',
+    'Pescatarian',
+    'Flexitarian',
+    'Gluten-Free',
+    'Dairy-Free',
+    'Nut-Free',
+    'Halal',
+    'Kosher',
+    'Low-Carb',
+    'High-Protein'
+  ];
   const flavors = ['Sweet', 'Savory', 'Spicy', 'Sour', 'Bitter', 'Umami'];
 
   const addIngredient = () => {
@@ -214,23 +230,29 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
           </Stack>
 
           {/* Dietary Preferences */}
-          <FormControl component="fieldset">
-            <Typography variant="subtitle1">Dietary Preferences:</Typography>
-            <FormGroup row>
-              {diets.map(d => (
-                <FormControlLabel
-                  key={d}
-                  control={
-                    <Checkbox
-                      checked={dietaryPreferences.includes(d)}
-                      onChange={() => toggleDiet(d)}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">Dietary Preferences</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <FormControl component="fieldset" fullWidth>
+                <FormGroup row>
+                  {diets.map(d => (
+                    <FormControlLabel
+                      key={d}
+                      control={
+                        <Checkbox
+                          checked={dietaryPreferences.includes(d)}
+                          onChange={() => toggleDiet(d)}
+                        />
+                      }
+                      label={d}
                     />
-                  }
-                  label={d}
-                />
-              ))}
-            </FormGroup>
-          </FormControl>
+                  ))}
+                </FormGroup>
+              </FormControl>
+            </AccordionDetails>
+          </Accordion>
 
           {/* Submit Button */}
           <Button
