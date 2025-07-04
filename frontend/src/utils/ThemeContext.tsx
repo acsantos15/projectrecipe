@@ -32,7 +32,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
           : {
               // dark mode palette overrides
               primary: {
-                main: '#90caf9',
+                main: '#fdd835',
               },
               background: {
                 default: '#121212',

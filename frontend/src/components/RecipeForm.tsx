@@ -76,12 +76,12 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
 
   return (
     <Box sx={{ flex: 1, maxWidth: 500 }}>
-      <Typography variant="h4" gutterBottom>
-        Recipe Generator
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+        RECIPE GENERATOR
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        <Stack spacing={3}>
+        <Stack spacing={1}>
           {/* Ingredients Input */}
           <Stack direction="row" spacing={2}>
             <TextField

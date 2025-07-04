@@ -83,10 +83,16 @@ const RecipeGenerator: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box
+      sx={{
+        p: 4,
+        pr: { xs: 2, md: '140px' },
+        pb: { xs: '160px', md: 4 }, 
+      }}
+    >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
         <RecipeForm onSubmit={generateRecipe} loading={loading} />
-        <RecipeDisplay recipeHtml={recipeHtml} error={error} />
+        <RecipeDisplay recipeHtml={recipeHtml} error={error} loading={loading} />
       </Stack>
       <Navigation />
     </Box>
