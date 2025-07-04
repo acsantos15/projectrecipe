@@ -1,6 +1,7 @@
 import json
 import boto3
 import re
+from typing import Dict, Any
 from ..utils.config import MODEL_ID, REGION
 from ..utils.aws_retry_helper import call_with_backoff
 from ..models.recipe_model import RecipeRequest
@@ -10,18 +11,34 @@ class RecipeService:
     def __init__(self):
         self.client = boto3.client("bedrock-runtime", region_name=REGION)
 
-    def generate(self, request: RecipeRequest) -> dict:
+    def generate(self, request: RecipeRequest) -> Dict[str, Any]:
         prompt = self._build_prompt(request)
         response_text = self._call_bedrock(prompt)
-
         cleaned_text = self._extract_json_block(response_text)
 
         try:
             parsed = json.loads(cleaned_text)
-            return parsed
+            return self._format_response(parsed)
         except json.JSONDecodeError as e:
-            raise ValueError(
-                f"Model response is not valid JSON:\n{response_text}") from e
+            # Return a properly formatted error response
+            return {
+                "error": f"Model response is not valid JSON: {str(e)}",
+                "raw_response": response_text
+            }
+
+    def _format_response(self, parsed_response: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensures the response matches our standard format"""
+        if "error" in parsed_response:
+            return parsed_response
+
+        return {
+            "name": parsed_response.get("name", ""),
+            "servings": parsed_response.get("servings", 0),
+            "cooking_time": parsed_response.get("cooking_time", 0),
+            "recipe": parsed_response.get("recipe", []),
+            "steps": parsed_response.get("steps", []),
+            "equipment": parsed_response.get("equipment", [])
+        }
 
     def _build_prompt(self, request: RecipeRequest) -> str:
         prompt_parts = [
@@ -52,15 +69,30 @@ class RecipeService:
         base_prompt = " ".join(prompt_parts) + "."
 
         return base_prompt + (
-            "\nRespond only with a valid JSON object. Do NOT include triple backticks, markdown, or labels like tabular-data-json. Format:\n"
+            "\nRespond only with a valid JSON object matching this exact structure:\n"
             "{\n"
             '  "name": "<Recipe name>",\n'
-            '  "servings": "<number of servings>",\n'
-            '  "cooking_time": "<cooking time in minutes>",\n'
-            '  "recipe": ["<ingredient 1>", "<ingredient 2>", ...],\n'
+            '  "servings": <number>,\n'
+            '  "cooking_time": <number>,\n'
+            '  "cuisine": "<Cuisine>",\n'
+            '  "recipe": ["<ingredient 1 with measurement>", "<ingredient 2 with measurement>", ...],\n'
             '  "steps": ["<step 1>", "<step 2>", ...],\n'
-            '  "equipment": ["<equipment 1>", "<equipment 2>", ...]\n'
-            "}"
+            '  "equipment": ["<item 1>", "<item 2>", ...]\n'
+            "}\n"
+            "Rules:\n"
+            "- **Generate a REAL, well-known dish** from the given cuisine and ingredients.\n"
+            "- If the ingredients suggest a classic dish (e.g., chicken + soy sauce + black pepper in Filipino cuisine → Adobo), return that dish.\n"
+            "- **Add essential ingredients** if they’re standard for the dish (e.g., garlic for Adobo, onions for Stir-Fry).\n"
+            "- **Use proper cooking techniques** (e.g., simmer, braise, marinate—not just 'cook in pan').\n"
+            "- **Measurements must be specific** (e.g., '1/2 cup soy sauce', not just 'soy sauce').\n"
+            "- **Steps must be clear, imperative, and sequential**\n"
+            "- **Equipment must be practical** (e.g., 'pot', 'knife', 'mixing bowl').\n"
+            "- **Never include extra text or markdown**—ONLY the JSON object.\n"
+            "\n"
+            "Example Behavior:\n"
+            "- Input: chicken, soy sauce, black pepper + Filipino → Output: Chicken Adobo (with vinegar/garlic added)\n"
+            "- Input: tomatoes, basil, mozzarella + Italian → Output: Caprese Salad\n"
+            "- Input: beef, potatoes, carrots + British → Output: Beef Stew\n"
         )
 
     def _call_bedrock(self, prompt: str) -> str:
@@ -83,13 +115,15 @@ class RecipeService:
         return response_json["results"][0]["outputText"]
 
     def _extract_json_block(self, text: str) -> str:
-        """
-        Removes Markdown-style triple-backtick fences, if present.
-        Works with ```json ... ```, ```tabular-data-json ... ```, or just ``` ... ```
-        """
-        match = re.search(r"```(?:\w+)?\s*({.*?})\s*```", text, re.DOTALL)
+        # Try to find JSON in markdown blocks first
+        match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
         if match:
             return match.group(1)
 
-        # Fallback: assume it's already clean JSON
+        # Try to find standalone JSON
+        match = re.search(r"^\s*({.*})\s*$", text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        # Fallback: return the text as-is (will fail JSON parsing but preserves the error)
         return text.strip()
