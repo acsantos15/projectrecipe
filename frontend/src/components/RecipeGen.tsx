@@ -12,19 +12,25 @@ const RecipeGenerator: React.FC = () => {
   const [recipeData, setRecipeData] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+
 
   const generateRecipe = async (formData: RecipeFormData) => {
   setError('');
   setRecipeData(null);
   setLoading(true);
 
+  const controller = new AbortController();
+  setAbortController(controller);
+
   try {
     const res = await axios.post(
       'https://mt10o4tzpf.execute-api.ap-northeast-1.amazonaws.com/dev/recipe',
-      formData
+      formData,
+      { signal: controller.signal }
     );
 
-    // Handle response parsing more safely
     let responseData;
     try {
       responseData = typeof res.data?.body === 'string' 
@@ -91,6 +97,17 @@ const RecipeGenerator: React.FC = () => {
   }
 };
 
+  const handleCancel = async () => {
+    if (abortController) {
+      abortController.abort();
+    }
+    setIsCanceling(true);
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    setIsCanceling(false);
+    setLoading(false);
+    setError('Request cancelled by user');
+  };
+
   return (
     <Box
       sx={{
@@ -100,8 +117,8 @@ const RecipeGenerator: React.FC = () => {
       }}
     >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
-        <RecipeForm onSubmit={generateRecipe} loading={loading} />
-        <RecipeDisplay recipeData={recipeData} error={error} loading={loading} />
+        <RecipeForm onSubmit={generateRecipe} loading={loading} isCanceling={isCanceling} onCancel={handleCancel}/>
+        <RecipeDisplay recipeData={recipeData} error={error} loading={loading} isCanceling={isCanceling} />
       </Stack>
       <Navigation />
     </Box>

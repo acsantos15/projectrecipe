@@ -18,6 +18,7 @@ interface RecipeDisplayProps {
   recipeData: any;
   error: string;
   loading: boolean;
+  isCanceling: boolean;
 }
 
 const getStyledComponents = (theme: any) => ({
@@ -270,38 +271,74 @@ const formatRecipe = (data: any, theme: any): React.ReactNode => {
   );
 };
 
-const RecipeDisplay: React.FC<RecipeDisplayProps> = ({ recipeData, error, loading }) => {
+const RecipeDisplay: React.FC<RecipeDisplayProps> = ({ recipeData, error, loading, isCanceling }) => {
   const theme = useTheme();
+
+  if (isCanceling) {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          height: 400,
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Avatar
+          src={loadingGif}
+          alt="Canceling..."
+          sx={{ 
+            width: 150, 
+            height: 150,
+            boxShadow: theme.shadows[4]
+          }}
+          variant="rounded"
+        />
+        <Typography variant="h6" color="text.secondary">
+          Canceling recipe generation...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          height: 400,
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Avatar
+          src={loadingGif}
+          alt="Loading..."
+          sx={{ 
+            width: 150, 
+            height: 150,
+            boxShadow: theme.shadows[4]
+          }}
+          variant="rounded"
+        />
+        <Typography variant="h6" color="text.secondary">
+          Crafting your recipe...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flex: 1, minHeight: 400 }}>
-      {loading ? (
-        <Box
-          sx={{
-            height: 400,
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <Avatar
-            src={loadingGif}
-            alt="Loading..."
-            sx={{ 
-              width: 150, 
-              height: 150,
-              boxShadow: theme.shadows[4]
-            }}
-            variant="rounded"
-          />
-          <Typography variant="h6" color="text.secondary">
-            Crafting your recipe...
-          </Typography>
-        </Box>
-      ) : error || recipeData?.response?.error ? (
+      {error || recipeData?.response?.error ? (
         <Paper elevation={3} sx={{ 
           p: 3,
           borderRadius: 2,

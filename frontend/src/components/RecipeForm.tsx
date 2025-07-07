@@ -29,9 +29,11 @@ import { RecipeFormData } from './RecipeGen';
 interface RecipeFormProps {
   onSubmit: (data: RecipeFormData) => void;
   loading: boolean;
+  isCanceling: boolean;
+  onCancel: () => void;
 }
 
-const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
+const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling, onCancel }) => {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [cuisine, setCuisine] = useState('');
   const [mealType, setMealType] = useState('');
@@ -244,13 +246,26 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
 
               {/* Submit Button */}
               <Button
-                type="submit"
+                type={loading ? "button" : "submit"}
                 variant="contained"
-                color="primary"
-                disabled={ingredients.length === 0 || loading}
+                color={loading ? "secondary" : "primary"} 
+                disabled={
+                  ingredients.length === 0 || 
+                  (loading && isCanceling) ||
+                  isCanceling
+                }
                 sx={{ mt: 1 }}
+                onClick={loading ? onCancel : undefined} 
               >
-                {loading ? <CircularProgress size={24} /> : 'Generate Recipe'}
+                {loading ? (
+                  isCanceling ? (
+                    <CircularProgress size={24} /> 
+                  ) : (
+                    'Cancel'
+                  )
+                ) : (
+                  'Generate Recipe'  // Default state
+                )}
               </Button>
             </Stack>
           </form>
