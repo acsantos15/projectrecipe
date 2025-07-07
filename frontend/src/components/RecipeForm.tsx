@@ -18,6 +18,10 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { RecipeFormData } from './RecipeGen';
@@ -42,17 +46,8 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
   const cuisines = ['Italian', 'Japanese', 'Mexican', 'Korean', 'Indian', 'French', 'Thai', 'Filipino'];
   const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'];
   const diets = [
-    'Vegetarian',
-    'Vegan',
-    'Pescatarian',
-    'Flexitarian',
-    'Gluten-Free',
-    'Dairy-Free',
-    'Nut-Free',
-    'Halal',
-    'Kosher',
-    'Low-Carb',
-    'High-Protein'
+    'Vegetarian', 'Vegan', 'Pescatarian', 'Flexitarian', 'Gluten-Free', 'Dairy-Free',
+    'Nut-Free', 'Halal', 'Kosher', 'Low-Carb', 'High-Protein'
   ];
   const flavors = ['Sweet', 'Savory', 'Spicy', 'Sour', 'Bitter', 'Umami'];
 
@@ -91,181 +86,176 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading }) => {
   };
 
   return (
-    <Box sx={{ flex: 1, maxWidth: 500 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-        RECIPE GENERATOR
-      </Typography>
+    <Box display="flex" justifyContent="center" mt={4}>
+      <Card sx={{ width: '100%', maxWidth: 600, p: 2 }}>
+        <CardHeader
+          title="RECIPE GENERATOR"
+          titleTypographyProps={{ variant: 'h5', fontWeight: 'bold', color: 'primary.main' }}
+        />
+        <Divider />
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <Stack spacing={2}>
+              {/* Ingredients Input */}
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="Add Ingredient"
+                  fullWidth
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                />
+                <Button variant="contained" onClick={addIngredient}>
+                  Add
+                </Button>
+              </Stack>
 
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={1}>
-          {/* Ingredients Input */}
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="Add Ingredient"
-              fullWidth
-              value={input}
-              onChange={e => setInput(e.target.value)}
-            />
-            <Button variant="contained" onClick={addIngredient}>
-              Add
-            </Button>
-          </Stack>
+              {/* Ingredient Chips */}
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {ingredients.map((ing, i) => (
+                  <Chip
+                    key={i}
+                    label={ing}
+                    onDelete={() => setIngredients(ingredients.filter((_, j) => j !== i))}
+                    color="primary"
+                  />
+                ))}
+              </Stack>
 
-          {/* Ingredient Chips */}
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {ingredients.map((ing, i) => (
-              <Chip
-                key={i}
-                label={ing}
-                onDelete={() => setIngredients(ingredients.filter((_, j) => j !== i))}
-                color="primary"
-              />
-            ))}
-          </Stack>
-
-          {/* Servings Input */}
-          <FormControl fullWidth>
-            <Typography gutterBottom>Servings: {servings}</Typography>
-            <Slider
-              value={servings}
-              onChange={(e, newValue) => setServings(newValue as number)}
-              min={1}
-              max={12}
-              step={1}
-              marks
-              valueLabelDisplay="auto"
-            />
-          </FormControl>
-
-          {/* Cooking Time Input */}
-          <FormControl fullWidth>
-            <Typography gutterBottom>Cooking Time: {cookingTime} minutes</Typography>
-            <Slider
-              value={cookingTime}
-              onChange={(e, newValue) => setCookingTime(newValue as number)}
-              min={5}
-              max={180}
-              step={5}
-              marks={[
-                { value: 5, label: '5m' },
-                { value: 30, label: '30m' },
-                { value: 60, label: '1h' },
-                { value: 120, label: '2h' },
-                { value: 180, label: '3h' },
-              ]}
-              valueLabelDisplay="auto"
-            />
-          </FormControl>
-
-          {/* Cuisine Selector */}
-          <FormControl fullWidth>
-            <InputLabel>Cuisine</InputLabel>
-            <Select value={cuisine} label="Cuisine" onChange={e => setCuisine(e.target.value)}>
-              <MenuItem value="">Any</MenuItem>
-              {cuisines.map(c => (
-                <MenuItem key={c} value={c}>
-                  {c}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Meal Type Selector */}
-          <FormControl fullWidth>
-            <InputLabel>Meal Type</InputLabel>
-            <Select
-              value={mealType}
-              label="Meal Type"
-              onChange={e => setMealType(e.target.value)}
-            >
-              <MenuItem value="">Any</MenuItem>
-              {meals.map(m => (
-                <MenuItem key={m} value={m}>
-                  {m}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Flavor Profile Selector */}
-          <FormControl fullWidth>
-            <InputLabel>Flavor Profile</InputLabel>
-            <Select
-              value={flavorProfile}
-              label="Flavor Profile"
-              onChange={e => setFlavorProfile(e.target.value)}
-            >
-              <MenuItem value="">Any</MenuItem>
-              {flavors.map(f => (
-                <MenuItem key={f} value={f}>
-                  {f}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Equipment Input */}
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="Add Equipment"
-              fullWidth
-              value={equipmentInput}
-              onChange={e => setEquipmentInput(e.target.value)}
-            />
-            <Button variant="contained" onClick={addEquipment}>
-              Add
-            </Button>
-          </Stack>
-
-          {/* Equipment Chips */}
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {equipment.map((item, i) => (
-              <Chip
-                key={i}
-                label={item}
-                onDelete={() => setEquipment(equipment.filter((_, j) => j !== i))}
-                color="secondary"
-              />
-            ))}
-          </Stack>
-
-          {/* Dietary Preferences */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Dietary Preferences</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <FormControl component="fieldset" fullWidth>
-                <FormGroup row>
-                  {diets.map(d => (
-                    <FormControlLabel
-                      key={d}
-                      control={
-                        <Checkbox
-                          checked={dietaryPreferences.includes(d)}
-                          onChange={() => toggleDiet(d)}
-                        />
-                      }
-                      label={d}
-                    />
-                  ))}
-                </FormGroup>
+              {/* Servings */}
+              <FormControl fullWidth>
+                <Typography gutterBottom>Servings: {servings}</Typography>
+                <Slider
+                  value={servings}
+                  onChange={(e, newValue) => setServings(newValue as number)}
+                  min={1}
+                  max={12}
+                  step={1}
+                  marks
+                  valueLabelDisplay="auto"
+                />
               </FormControl>
-            </AccordionDetails>
-          </Accordion>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={ingredients.length === 0 || loading}
-            sx={{ mt: 2 }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Generate Recipe'}
-          </Button>
-        </Stack>
-      </form>
+              {/* Cooking Time */}
+              <FormControl fullWidth>
+                <Typography gutterBottom>Cooking Time: {cookingTime} minutes</Typography>
+                <Slider
+                  value={cookingTime}
+                  onChange={(e, newValue) => setCookingTime(newValue as number)}
+                  min={5}
+                  max={180}
+                  step={5}
+                  marks={[
+                    { value: 5, label: '5m' },
+                    { value: 30, label: '30m' },
+                    { value: 60, label: '1h' },
+                    { value: 120, label: '2h' },
+                    { value: 180, label: '3h' },
+                  ]}
+                  valueLabelDisplay="auto"
+                />
+              </FormControl>
+
+              {/* Cuisine Selector */}
+              <FormControl fullWidth>
+                <InputLabel>Cuisine</InputLabel>
+                <Select value={cuisine} label="Cuisine" onChange={e => setCuisine(e.target.value)}>
+                  <MenuItem value="">Any</MenuItem>
+                  {cuisines.map(c => (
+                    <MenuItem key={c} value={c}>{c}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {/* Meal Type Selector */}
+              <FormControl fullWidth>
+                <InputLabel>Meal Type</InputLabel>
+                <Select value={mealType} label="Meal Type" onChange={e => setMealType(e.target.value)}>
+                  <MenuItem value="">Any</MenuItem>
+                  {meals.map(m => (
+                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {/* Flavor Profile Selector */}
+              <FormControl fullWidth>
+                <InputLabel>Flavor Profile</InputLabel>
+                <Select
+                  value={flavorProfile}
+                  label="Flavor Profile"
+                  onChange={e => setFlavorProfile(e.target.value)}
+                >
+                  <MenuItem value="">Any</MenuItem>
+                  {flavors.map(f => (
+                    <MenuItem key={f} value={f}>{f}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {/* Equipment Input */}
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="Add Equipment"
+                  fullWidth
+                  value={equipmentInput}
+                  onChange={e => setEquipmentInput(e.target.value)}
+                />
+                <Button variant="contained" onClick={addEquipment}>
+                  Add
+                </Button>
+              </Stack>
+
+              {/* Equipment Chips */}
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {equipment.map((item, i) => (
+                  <Chip
+                    key={i}
+                    label={item}
+                    onDelete={() => setEquipment(equipment.filter((_, j) => j !== i))}
+                    color="secondary"
+                  />
+                ))}
+              </Stack>
+
+              {/* Dietary Preferences */}
+              <Accordion>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle1">Dietary Preferences</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <FormControl component="fieldset" fullWidth>
+                    <FormGroup row>
+                      {diets.map(d => (
+                        <FormControlLabel
+                          key={d}
+                          control={
+                            <Checkbox
+                              checked={dietaryPreferences.includes(d)}
+                              onChange={() => toggleDiet(d)}
+                            />
+                          }
+                          label={d}
+                        />
+                      ))}
+                    </FormGroup>
+                  </FormControl>
+                </AccordionDetails>
+              </Accordion>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={ingredients.length === 0 || loading}
+                sx={{ mt: 1 }}
+              >
+                {loading ? <CircularProgress size={24} /> : 'Generate Recipe'}
+              </Button>
+            </Stack>
+          </form>
+        </CardContent>
+      </Card>
     </Box>
   );
 };

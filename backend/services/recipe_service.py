@@ -1,7 +1,7 @@
 import json
 import boto3
 import re
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from ..utils.config import MODEL_ID, REGION
 from ..utils.aws_retry_helper import call_with_backoff
 from ..models.recipe_model import RecipeRequest
@@ -12,6 +12,15 @@ class RecipeService:
         self.client = boto3.client("bedrock-runtime", region_name=REGION)
 
     def generate(self, request: RecipeRequest) -> Dict[str, Any]:
+        # Step 1: Validate dietary constraints dynamically
+        validation_error = self._validate_dietary_constraints(request)
+        if validation_error:
+            return {
+                "error": validation_error,
+                "message": "Dietary conflict detected. Please adjust your request."
+            }
+
+        # Step 2: Proceed with recipe generation if valid
         prompt = self._build_prompt(request)
         response_text = self._call_bedrock(prompt)
         cleaned_text = self._extract_json_block(response_text)
@@ -20,25 +29,58 @@ class RecipeService:
             parsed = json.loads(cleaned_text)
             return self._format_response(parsed)
         except json.JSONDecodeError as e:
-            # Return a properly formatted error response
             return {
                 "error": f"Model response is not valid JSON: {str(e)}",
                 "raw_response": response_text
             }
 
+    def _validate_dietary_constraints(self, request: RecipeRequest) -> Optional[str]:
+        """Ask the LLM if the request has dietary conflicts."""
+        if not request.dietary_prefs:
+            return None
+
+        # Build a dynamic validation prompt
+        validation_prompt = (
+            "Does the following recipe request have dietary conflicts?\n"
+            f"- Ingredients: {', '.join(request.ingredients)}\n"
+            f"- Dietary preferences: {', '.join(request.dietary_prefs)}\n\n"
+            "Respond **only** with 'YES' or 'NO'.\n"
+            "Example:\n"
+            "NO (if no conflicts)\n"
+            "YES (if ingredients conflict with dietary preferences)"
+        )
+
+        # Call Bedrock for validation
+        validation_response = self._call_bedrock(validation_prompt)
+        validation_result = validation_response.strip().upper()
+
+        if validation_result == "YES":
+            return (
+                f"Conflict detected: Ingredients ({', '.join(request.ingredients)}) "
+                f"are incompatible with dietary preferences ({', '.join(request.dietary_prefs)})."
+            )
+        return None
+
     def _format_response(self, parsed_response: Dict[str, Any]) -> Dict[str, Any]:
         """Ensures the response matches our standard format"""
         if "error" in parsed_response:
             return parsed_response
-            
-        return {
+
+        response = {
             "name": parsed_response.get("name", ""),
             "servings": parsed_response.get("servings", 0),
             "cooking_time": parsed_response.get("cooking_time", 0),
             "recipe": parsed_response.get("recipe", []),
             "steps": parsed_response.get("steps", []),
-            "equipment": parsed_response.get("equipment", [])
+            "equipment": parsed_response.get("equipment", []),
+            "nutrition": parsed_response.get("nutrition", []),
         }
+
+        # Only include message if it exists in the response
+        if "message" in parsed_response:
+            response["message"] = parsed_response["message"]
+
+        return response
 
     def _build_prompt(self, request: RecipeRequest) -> str:
         prompt_parts = [
@@ -77,23 +119,21 @@ class RecipeService:
             '  "cuisine": "<Cuisine>",\n'
             '  "recipe": ["<ingredient 1 with measurement>", "<ingredient 2 with measurement>", ...],\n'
             '  "steps": ["<step 1>", "<step 2>", ...],\n'
-            '  "equipment": ["<item 1>", "<item 2>", ...]\n'
+            '  "equipment": ["<item 1>", "<item 2>", ...],\n'
+            '  "nutrition": ["<nutrition 1 with measurement>", "<nutrition 2 with measurement>", ...],\n'
+
             "}\n"
-            "Rules:\n"
+            "GENERAL RULES:\n"
             "- **Generate a REAL, well-known dish** from the given cuisine and ingredients.\n"
-            "- If the ingredients suggest a classic dish (e.g., chicken + soy sauce + black pepper in Filipino cuisine → Adobo), return that dish.\n"
-            "- **Add essential ingredients** if they’re standard for the dish (e.g., garlic for Adobo, onions for Stir-Fry).\n"
-            "- **Use proper cooking techniques** (e.g., simmer, braise, marinate—not just 'cook in pan').\n"
-            "- **Measurements must be specific** (e.g., '1/2 cup soy sauce', not just 'soy sauce').\n"
+            "- **Don't add numbers to the 'steps'**\n"
+            "- **Add essential ingredients** if they're standard for the dish.\n"
+            "- **Use proper cooking techniques** (e.g., simmer, braise, marinate).\n"
+            "- **Measurements must be specific** (e.g., '1/2 cup soy sauce').\n"
             "- **Steps must be clear, imperative, and sequential**\n"
-            "- **Equipment must be practical** (e.g., 'pot', 'knife', 'mixing bowl').\n"
+            "- **Equipment must be practical** (e.g., 'pot', 'knife').\n"
             "- **Never include extra text or markdown**—ONLY the JSON object.\n"
-            "- **Never generate logically or culturally inconsistent recipes** (e.g., vegan dishes must not contain animal products like pork, dairy, or eggs).\n"
+            "- **Never generate logically or culturally inconsistent recipes**.\n"
             "\n"
-            "Example Behavior:\n"
-            "- Input: chicken, soy sauce, black pepper + Filipino → Output: Chicken Adobo (with vinegar/garlic added)\n"
-            "- Input: tomatoes, basil, mozzarella + Italian → Output: Caprese Salad\n"
-            "- Input: beef, potatoes, carrots + British → Output: Beef Stew\n"
         )
 
     def _call_bedrock(self, prompt: str) -> str:
@@ -120,11 +160,11 @@ class RecipeService:
         match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
         if match:
             return match.group(1)
-        
+
         # Try to find standalone JSON
         match = re.search(r"^\s*({.*})\s*$", text, re.DOTALL)
         if match:
             return match.group(1)
-            
+
         # Fallback: return the text as-is (will fail JSON parsing but preserves the error)
         return text.strip()

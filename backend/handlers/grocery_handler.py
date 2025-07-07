@@ -4,6 +4,7 @@ from ..services.grocery_service import GroceryService
 
 service = GroceryService()
 
+
 def grocery_handler(event, context):
     cors_headers = {
         "Access-Control-Allow-Origin": "*",

@@ -14,70 +14,82 @@ const RecipeGenerator: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const generateRecipe = async (formData: RecipeFormData) => {
-    setError('');
-    setRecipeData(null);
-    setLoading(true);
+  setError('');
+  setRecipeData(null);
+  setLoading(true);
 
+  try {
+    const res = await axios.post(
+      'https://mt10o4tzpf.execute-api.ap-northeast-1.amazonaws.com/dev/recipe',
+      formData
+    );
+
+    // Handle response parsing more safely
+    let responseData;
     try {
-      const res = await axios.post(
-        'https://mt10o4tzpf.execute-api.ap-northeast-1.amazonaws.com/dev/recipe',
-        formData
-      );
-
-      // Handle response parsing more safely
-      let responseData;
-      try {
-        responseData = typeof res.data?.body === 'string' 
-          ? JSON.parse(res.data.body) 
-          : res.data?.body || res.data;
-      } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-        throw new Error('Invalid server response format');
-      }
-
-      // Check for error in response (multiple possible error formats)
-      if (!responseData) {
-        throw new Error('Empty response from server');
-      }
-
-      if (responseData.error || responseData.message) {
-        throw new Error(responseData.details || responseData.error || responseData.message);
-      }
-
-      // Check for the expected recipe response format
-      if (!responseData.response || typeof responseData.response !== 'object') {
-        throw new Error('Received invalid recipe format from server');
-      }
-
-      // Format and display the recipe
-      setRecipeData(responseData);
-
-    } catch (err: any) {
-      console.error('Recipe generation error:', err);
-      
-      // Handle different error formats
-      let errorMessage = 'Failed to generate recipe';
-      if (err.response) {
-        // Try to extract error message from axios error response
-        try {
-          const errorData = typeof err.response.data?.body === 'string'
-            ? JSON.parse(err.response.data.body)
-            : err.response.data?.body || err.response.data;
-          errorMessage = errorData?.details || errorData?.error || errorData?.message || errorMessage;
-        } catch (parseError) {
-          errorMessage = 'Invalid error response format';
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
-      }
-
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      responseData = typeof res.data?.body === 'string' 
+        ? JSON.parse(res.data.body) 
+        : res.data?.body || res.data;
+    } catch (parseError) {
+      console.error('Failed to parse response:', parseError);
+      throw new Error('Invalid server response format');
     }
-  };
+
+    // Check for error in the specific response format you provided
+    if (responseData?.response?.error) {
+      // For dietary conflict errors, keep the full response including metadata
+      setRecipeData(responseData);
+      setError(responseData.response.error);
+      return;
+    }
+
+    // Check for other error formats
+    if (responseData?.error || responseData?.message) {
+      throw new Error(responseData.details || responseData.error || responseData.message);
+    }
+
+    // Check for the expected recipe response format
+    if (!responseData?.response || typeof responseData.response !== 'object') {
+      throw new Error('Received invalid recipe format from server');
+    }
+
+    // Format and display the recipe
+    setRecipeData(responseData);
+
+  } catch (err: any) {
+    console.error('Recipe generation error:', err);
+    
+    // Handle different error formats
+    let errorMessage = 'Failed to generate recipe';
+    if (err.response) {
+      // Try to extract error message from axios error response
+      try {
+        const errorData = typeof err.response.data?.body === 'string'
+          ? JSON.parse(err.response.data.body)
+          : err.response.data?.body || err.response.data;
+        
+        // Handle the specific error format with response.error
+        if (errorData?.response?.error) {
+          errorMessage = errorData.response.error;
+          // Keep the metadata for display
+          setRecipeData(errorData);
+        } else {
+          errorMessage = errorData?.details || errorData?.error || errorData?.message || errorMessage;
+        }
+      } catch (parseError) {
+        errorMessage = 'Invalid error response format';
+      }
+    } else if (err.message) {
+      errorMessage = err.message;
+    } else if (typeof err === 'string') {
+      errorMessage = err;
+    }
+
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Box

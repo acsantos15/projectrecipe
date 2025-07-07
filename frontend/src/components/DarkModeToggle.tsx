@@ -7,6 +7,10 @@ export function DarkModeToggle() {
   const { toggleTheme, mode } = useThemeContext();
   const theme = useTheme();
 
+  const isDark = mode === 'dark';
+  const switchThumbColor = isDark ? '#fdd835' : '#388e3c';      // yellow for dark, green for light
+  const switchTrackColor = isDark ? '#fdd83555' : '#388e3c55';  // semi-transparent
+
   return (
     <Box
       sx={{
@@ -19,25 +23,22 @@ export function DarkModeToggle() {
     >
       <LightModeIcon 
         sx={{ 
-          color: mode === 'light' ? theme.palette.warning.main : theme.palette.text.secondary,
+          color: !isDark ? theme.palette.primary.main : theme.palette.text.secondary,
           fontSize: '1.2rem'
         }} 
       />
       <FormControlLabel
         control={
           <Switch
-            checked={mode === 'dark'}
+            checked={isDark}
             onChange={toggleTheme}
-            color={mode === 'dark' ? 'primary' : 'secondary'}
             sx={{
               '& .MuiSwitch-thumb': {
-                backgroundColor: mode === 'dark' ? theme.palette.primary.main : theme.palette.secondary.main,
+                backgroundColor: switchThumbColor,
               },
               '& .MuiSwitch-track': {
-                backgroundColor: mode === 'dark' 
-                  ? `${theme.palette.primary.light} !important` 
-                  : `${theme.palette.secondary.light} !important`,
-                opacity: '0.5 !important',
+                backgroundColor: switchTrackColor,
+                opacity: 1,
               },
             }}
           />
@@ -50,7 +51,7 @@ export function DarkModeToggle() {
       />
       <DarkModeIcon 
         sx={{ 
-          color: mode === 'dark' ? theme.palette.primary.main : theme.palette.text.secondary,
+          color: isDark ? theme.palette.primary.main : theme.palette.text.secondary,
           fontSize: '1.2rem'
         }} 
       />

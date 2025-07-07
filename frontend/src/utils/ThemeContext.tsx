@@ -1,4 +1,3 @@
-// src/theme/ThemeContext.tsx
 import { createContext, useContext, useState, useMemo } from 'react';
 import { createTheme, Theme, ThemeProvider } from '@mui/material/styles';
 

@@ -1,7 +1,7 @@
 import json
-import boto3
 import re
 from typing import Dict, Any
+import boto3
 from ..utils.config import MODEL_ID, REGION
 from ..utils.aws_retry_helper import call_with_backoff
 from ..models.grocery_model import GroceryRequest
@@ -27,35 +27,60 @@ class GroceryService:
 
     def _format_response(self, parsed_response: Dict[str, Any]) -> Dict[str, Any]:
         return {
-            "meal_name": parsed_response.get("meal_name", ""),
-            "servings": parsed_response.get("servings", 0),
-            "estimated_cost": parsed_response.get("estimated_cost", 0.0),
-            "ingredients": parsed_response.get("ingredients", [])
+            "response": {
+                "meal_name": parsed_response.get("meal_name", ""),
+                "servings": parsed_response.get("servings", 0),
+                "estimated_cost": parsed_response.get("estimated_cost", 0.0),
+                "ingredients": parsed_response.get("ingredients", [])
+            },
+            "metadata": {
+                "meal_name": parsed_response.get("meal_name", ""),
+                "servings": parsed_response.get("servings", 0),
+                "budget_limit": parsed_response.get("budget_limit", 0),
+                "region": parsed_response.get("region", "PH/Philippines")
+            }
         }
 
     def _build_prompt(self, request: GroceryRequest) -> str:
-        prompt = f"""
-        Generate a grocery list for the meal "{request.meal_name}".
-        It should serve {request.servings or 1} person(s).
-        The total budget should not exceed ${request.budget_limit or 20:.2f}.
-        Region: {request.region or "US"}.
+        prompt_parts = [
+            f"Generate a grocery list for the meal {request.meal_name}"
+        ]
 
-        Respond only with a valid JSON in this format:
+        if request.servings:
+            prompt_parts.append(f" that serves {request.servings} people")
 
-        {{
-        "meal_name": "<meal name>",
-        "servings": <number>,
-        "estimated_cost": <total estimated cost>,
-        "ingredients": ["<ingredient 1>", "<ingredient 2>", ...]
-        }}
+        if request.budget_limit:
+            prompt_parts.append(
+                f" The total budget should not exceed {request.budget_limit}")
 
-        Rules:
-        - Be realistic with prices and portion sizes.
-        - Ingredients should reflect regional availability.
-        - Estimate cost reasonably and stay under the specified budget.
-        - Never include any markdown, explanation, or extra text.
-        """
-        return prompt.strip()
+        if request.region:
+            prompt_parts.append(
+                f" On country of: {request.region} (also use {request.region} currency)")
+
+        base_prompt = " ".join(prompt_parts) + "."
+
+        return base_prompt + (
+            "\nRespond only with a valid JSON object matching this exact structure:\n"
+            "{\n"
+            '  "meal_name": "<Meal name>",\n'
+            '  "servings": "<servings>",\n'
+            '  "estimated_cost": "<total estimated cost>",\n'
+            '  "ingredients": [\n'
+            '    {\n'
+            '      "name": "<ingredient name>",\n'
+            '      "quantity": "<amount>",\n'
+            '      "price": <price per quantity>\n'
+            '    },\n'
+            '    ...\n'
+            '  ]\n'
+            '}\n'
+            "GENERAL RULES:\n"
+            "- **Be realistic with prices and portion sizes.**\n"
+            "- **Ingredients should reflect regional availability.**\n"
+            "- **Estimate cost per ingredient and total cost accurately.**\n"
+            "- **Never include any markdown, explanation, or extra text.**\n"
+            "\n"
+        )
 
     def _call_bedrock(self, prompt: str) -> str:
         params = {

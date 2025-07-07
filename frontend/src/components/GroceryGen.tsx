@@ -60,8 +60,14 @@ const GroceryGen: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
-      <Stack spacing={4}>
+    <Box
+      sx={{
+        p: 4,
+        pr: { xs: 2, md: '140px' },
+        pb: { xs: '160px', md: 4 }, 
+      }}
+    >
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
         <GroceryForm onSubmit={generateGroceryList} loading={loading} />
         <GroceryDisplay groceryData={groceryData} error={error} loading={loading} />
       </Stack>
