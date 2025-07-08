@@ -1,5 +1,5 @@
 import { Switch, FormControlLabel, useTheme, Box } from '@mui/material';
-import { useThemeContext } from '../utils/ThemeContext';
+import { useThemeContext } from '../../utils/ThemeContext';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 
@@ -8,8 +8,8 @@ export function DarkModeToggle() {
   const theme = useTheme();
 
   const isDark = mode === 'dark';
-  const switchThumbColor = isDark ? '#fdd835' : '#388e3c';      // yellow for dark, green for light
-  const switchTrackColor = isDark ? '#fdd83555' : '#388e3c55';  // semi-transparent
+  const switchThumbColor = isDark ? '#fdd835' : '#388e3c';  
+  const switchTrackColor = isDark ? '#fdd83555' : '#388e3c55';  
 
   return (
     <Box

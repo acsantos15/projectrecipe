@@ -24,14 +24,8 @@ import {
   Divider
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { RecipeFormData } from './RecipeGen';
-
-interface RecipeFormProps {
-  onSubmit: (data: RecipeFormData) => void;
-  loading: boolean;
-  isCanceling: boolean;
-  onCancel: () => void;
-}
+import { RecipeFormProps  } from '../../types/recipeType';
+import { useRecipeMetadata } from '../../services/metadataCache';
 
 const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling, onCancel }) => {
   const [ingredients, setIngredients] = useState<string[]>([]);
@@ -45,13 +39,9 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling,
   const [equipmentInput, setEquipmentInput] = useState('');
   const [cookingTime, setCookingTime] = useState<number>(30);
 
-  const cuisines = ['Italian', 'Japanese', 'Mexican', 'Korean', 'Indian', 'French', 'Thai', 'Filipino'];
-  const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'];
-  const diets = [
-    'Vegetarian', 'Vegan', 'Pescatarian', 'Flexitarian', 'Gluten-Free', 'Dairy-Free',
-    'Nut-Free', 'Halal', 'Kosher', 'Low-Carb', 'High-Protein'
-  ];
-  const flavors = ['Sweet', 'Savory', 'Spicy', 'Sour', 'Bitter', 'Umami'];
+  const { data } = useRecipeMetadata();
+
+
 
   const addIngredient = () => {
     if (input.trim()) {
@@ -162,7 +152,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling,
                 <InputLabel>Cuisine</InputLabel>
                 <Select value={cuisine} label="Cuisine" onChange={e => setCuisine(e.target.value)}>
                   <MenuItem value="">Any</MenuItem>
-                  {cuisines.map(c => (
+                  {data?.cuisines.map(c => (
                     <MenuItem key={c} value={c}>{c}</MenuItem>
                   ))}
                 </Select>
@@ -173,7 +163,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling,
                 <InputLabel>Meal Type</InputLabel>
                 <Select value={mealType} label="Meal Type" onChange={e => setMealType(e.target.value)}>
                   <MenuItem value="">Any</MenuItem>
-                  {meals.map(m => (
+                  {data?.meals.map(m => (
                     <MenuItem key={m} value={m}>{m}</MenuItem>
                   ))}
                 </Select>
@@ -188,7 +178,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling,
                   onChange={e => setFlavorProfile(e.target.value)}
                 >
                   <MenuItem value="">Any</MenuItem>
-                  {flavors.map(f => (
+                  {data?.flavors.map(f => (
                     <MenuItem key={f} value={f}>{f}</MenuItem>
                   ))}
                 </Select>
@@ -227,7 +217,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling,
                 <AccordionDetails>
                   <FormControl component="fieldset" fullWidth>
                     <FormGroup row>
-                      {diets.map(d => (
+                      {data?.diets.map(d => (
                         <FormControlLabel
                           key={d}
                           control={

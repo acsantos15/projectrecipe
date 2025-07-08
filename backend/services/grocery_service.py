@@ -40,7 +40,7 @@ class GroceryService:
                 "region": parsed_response.get("region", "PH/Philippines")
             }
         }
-
+    
     def _build_prompt(self, request: GroceryRequest) -> str:
         prompt_parts = [
             f"Generate a grocery list for the meal {request.meal_name}"
@@ -52,7 +52,7 @@ class GroceryService:
         if request.budget_limit:
             prompt_parts.append(
                 f" The total budget should not exceed {request.budget_limit}")
-
+            
         if request.region:
             prompt_parts.append(
                 f" On country of: {request.region} (also use {request.region} currency)")

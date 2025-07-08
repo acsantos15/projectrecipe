@@ -11,7 +11,7 @@ import {
   Paper,
   Stack
 } from '@mui/material';
-import loadingGif from '../assets/loading2.gif';
+import loadingGif from '../../assets/loading2.gif';
 
 interface Props {
   groceryData: any;

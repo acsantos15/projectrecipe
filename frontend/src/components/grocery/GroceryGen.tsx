@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Box, Stack } from '@mui/material';
 import GroceryForm from './GroceryForm';
 import GroceryDisplay from './GroceryDisplay';
-import Navigation from './Navigation';
+import Navigation from '../common/Navigation';
 
 export interface GroceryFormData {
   meal_name: string;

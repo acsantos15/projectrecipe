@@ -5,6 +5,8 @@ from typing import Dict, Any, Optional
 from ..utils.config import MODEL_ID, REGION
 from ..utils.aws_retry_helper import call_with_backoff
 from ..models.recipe_model import RecipeRequest
+from ..utils import dynamodb
+import uuid
 
 
 class RecipeService:
@@ -12,7 +14,6 @@ class RecipeService:
         self.client = boto3.client("bedrock-runtime", region_name=REGION)
 
     def generate(self, request: RecipeRequest) -> Dict[str, Any]:
-        # Step 1: Validate dietary constraints dynamically
         validation_error = self._validate_dietary_constraints(request)
         if validation_error:
             return {
@@ -20,14 +21,28 @@ class RecipeService:
                 "message": "Dietary conflict detected. Please adjust your request."
             }
 
-        # Step 2: Proceed with recipe generation if valid
         prompt = self._build_prompt(request)
         response_text = self._call_bedrock(prompt)
         cleaned_text = self._extract_json_block(response_text)
 
         try:
             parsed = json.loads(cleaned_text)
-            return self._format_response(parsed)
+            formatted = self._format_response(parsed)
+
+            # Save recipe to DB
+            recipe_id = str(uuid.uuid4())
+            dynamodb.save_recipe(recipe_id, {
+                "recipe": formatted,
+                "ingredients": request.ingredients,
+                "cuisine": request.cuisine,
+                "dietary": request.dietary_prefs,
+                "nutrition": formatted.get("nutrition", []),
+                "createdAt": int(uuid.uuid1().time)  # sort timestamp
+            })
+
+            # Attach ID to response
+            return {**formatted, "id": recipe_id}
+
         except json.JSONDecodeError as e:
             return {
                 "error": f"Model response is not valid JSON: {str(e)}",
@@ -39,7 +54,6 @@ class RecipeService:
         if not request.dietary_prefs:
             return None
 
-        # Build a dynamic validation prompt
         validation_prompt = (
             "Does the following recipe request have dietary conflicts?\n"
             f"- Ingredients: {', '.join(request.ingredients)}\n"
@@ -50,7 +64,6 @@ class RecipeService:
             "YES (if ingredients conflict with dietary preferences)"
         )
 
-        # Call Bedrock for validation
         validation_response = self._call_bedrock(validation_prompt)
         validation_result = validation_response.strip().upper()
 
@@ -65,7 +78,7 @@ class RecipeService:
         """Ensures the response matches our standard format"""
         if "error" in parsed_response:
             return parsed_response
-
+            
         response = {
             "name": parsed_response.get("name", ""),
             "servings": parsed_response.get("servings", 0),
@@ -75,11 +88,11 @@ class RecipeService:
             "equipment": parsed_response.get("equipment", []),
             "nutrition": parsed_response.get("nutrition", []),
         }
-
+        
         # Only include message if it exists in the response
         if "message" in parsed_response:
             response["message"] = parsed_response["message"]
-
+            
         return response
 
     def _build_prompt(self, request: RecipeRequest) -> str:
@@ -121,7 +134,7 @@ class RecipeService:
             '  "steps": ["<step 1>", "<step 2>", ...],\n'
             '  "equipment": ["<item 1>", "<item 2>", ...],\n'
             '  "nutrition": ["<nutrition 1 with measurement>", "<nutrition 2 with measurement>", ...],\n'
-
+            
             "}\n"
             "GENERAL RULES:\n"
             "- **Generate a REAL, well-known dish** from the given cuisine and ingredients.\n"
@@ -160,11 +173,11 @@ class RecipeService:
         match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
         if match:
             return match.group(1)
-
+        
         # Try to find standalone JSON
         match = re.search(r"^\s*({.*})\s*$", text, re.DOTALL)
         if match:
             return match.group(1)
-
+            
         # Fallback: return the text as-is (will fail JSON parsing but preserves the error)
         return text.strip()

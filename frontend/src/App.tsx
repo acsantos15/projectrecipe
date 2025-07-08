@@ -1,9 +1,9 @@
 import React from 'react';
-import './App.css';
 import { CssBaseline, Button, Box, Stack, Typography } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import RecipeGen from './components/RecipeGen';
-import GroceryGen from './components/GroceryGen';
+import RecipeGen from './components/recipe/RecipeGen';
+import GroceryGen from './components/grocery/GroceryGen';
+import History from './components/history/HistoryDisplay';
 import logo from './assets/mainicon.jpg';
 import recipeIcon from './assets/recipe.gif';
 import groceryIcon from './assets/grocery.gif';
@@ -106,6 +106,35 @@ const Home: React.FC = () => (
           GROCERY LIST
         </Typography>
       </Box>
+
+      <Box display="flex" flexDirection="column" alignItems="center">
+        <Button
+          component={Link}
+          to="/history"
+          sx={{
+            width: 100,
+            height: 100,
+            minWidth: 0,
+            p: 0,
+            overflow: 'hidden',
+            backgroundColor: 'transparent'
+          }}
+        >
+          <img 
+            src={groceryIcon} 
+            alt="Hisotry" 
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+          />
+        </Button>
+        <Typography variant="subtitle1" sx={{ mt: 1, fontWeight: 'bold' }}>
+          History
+        </Typography>
+      </Box>
     </Stack>
   </Box>
 );
@@ -121,6 +150,7 @@ const App: React.FC = () => {
               <Route path="/" element={<Home />} />
               <Route path="/recipe" element={<RecipeGen />} />
               <Route path="/grocery" element={<GroceryGen />} />
+              <Route path="/history" element={<History />} />
             </Routes>
           </div>
         </Router>
