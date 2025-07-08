@@ -10,7 +10,8 @@ import {
   Divider, 
   Chip,
   Avatar,
-  useTheme
+  useTheme,
+  Skeleton
 } from '@mui/material';
 import loadingGif from '../../assets/loading.gif';
 
@@ -304,31 +305,149 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({ recipeData, error, loadin
   }
 
   if (loading) {
-    return (
-      <Box
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        backgroundColor: theme.palette.background.default,
+        px: 2,
+        py: 4
+      }}
+    >
+      <Paper
+        elevation={3}
         sx={{
           flex: 1,
-          height: 400,
+          width: '100%',
+          maxWidth: 1000,
           minHeight: '100vh',
+          borderRadius: 2,
+          p: 4,
+          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 2
+          boxShadow: theme.shadows[3],
+          mx: 'auto'
         }}
       >
-        <Avatar
-          src={loadingGif}
-          alt="Loading..."
-          sx={{ width: 150, height: 150, boxShadow: theme.shadows[4] }}
-          variant="rounded"
+        {/* Title Skeleton */}
+        <Skeleton
+          variant="text"
+          width="40%"
+          height={48}
+          sx={{ mb: 3, bgcolor: theme.palette.grey[400] }}
         />
-        <Typography variant="h6" color="text.secondary">
-          Crafting your recipe...
-        </Typography>
-      </Box>
-    );
-  }
+
+        {/* Chips Skeleton */}
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <Skeleton
+              key={idx}
+              variant="rounded"
+              width={140}
+              height={32}
+              sx={{ bgcolor: theme.palette.grey[400] }}
+            />
+          ))}
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Ingredients + Nutrition */}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 4,
+            flexDirection: { xs: 'column', md: 'row' },
+            mb: 4
+          }}
+        >
+          {[...Array(2)].map((_, boxIdx) => (
+            <Box key={boxIdx} sx={{ flex: 1 }}>
+              <Skeleton
+                variant="text"
+                width="50%"
+                height={30}
+                sx={{ mb: 2, bgcolor: theme.palette.grey[400] }}
+              />
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <Skeleton
+                  key={idx}
+                  variant="text"
+                  width="100%"
+                  height={20}
+                  sx={{ mb: 1, bgcolor: theme.palette.grey[300] }}
+                />
+              ))}
+            </Box>
+          ))}
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Steps */}
+        <Skeleton
+          variant="text"
+          width="30%"
+          height={30}
+          sx={{ mb: 2, bgcolor: theme.palette.grey[400] }}
+        />
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <Skeleton
+            key={idx}
+            variant="rectangular"
+            width="100%"
+            height={50}
+            sx={{ mb: 1.5, borderRadius: 1, bgcolor: theme.palette.grey[300] }}
+          />
+        ))}
+
+        {/* Loading Overlay (on top of skeleton) */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 10,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexDirection: 'column',
+            backdropFilter: 'blur(1px)', // optional
+            backgroundColor: 'rgba(255,255,255,0.05)', // subtle dim effect
+            pointerEvents: 'none'
+          }}
+        >
+          <Avatar
+            src={loadingGif}
+            alt="Loading..."
+            sx={{
+              width: 150,
+              height: 150,
+              boxShadow: theme.shadows[5],
+              backgroundColor: '#fff', // solid background
+              p: 1
+            }}
+            variant="rounded"
+          />
+          <Typography
+            variant="h6"
+            color="text.primary"
+            sx={{ mt: 2 }}
+          >
+            Crafting your recipe...
+          </Typography>
+        </Box>
+      </Paper>
+    </Box>
+  );
+}
+
+
 
   return (
     <Box sx={{ flex: 1, minHeight: 400 }}>

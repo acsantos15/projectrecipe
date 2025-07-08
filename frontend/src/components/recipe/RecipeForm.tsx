@@ -38,10 +38,9 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onSubmit, loading, isCanceling,
   const [equipment, setEquipment] = useState<string[]>([]);
   const [equipmentInput, setEquipmentInput] = useState('');
   const [cookingTime, setCookingTime] = useState<number>(30);
-
+  
+  //recipe 
   const { data } = useRecipeMetadata();
-
-
 
   const addIngredient = () => {
     if (input.trim()) {

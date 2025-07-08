@@ -13,7 +13,7 @@ export const useRecipeMetadata = () => {
 
   useEffect(() => {
     const key = 'recipe_metadata_cache';
-    const oneHour = 60 * 60 * 1000;
+    const oneHour = 60 * 60 * 24000;
 
     const cached = localStorage.getItem(key);
     if (cached) {
